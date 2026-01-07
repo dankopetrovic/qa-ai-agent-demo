@@ -1,0 +1,277 @@
+{
+  "name": "Convert to CSV",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "user_story_id"
+            }
+          ]
+        }
+      },
+      "id": "c055762a-8fe7-4141-a639-df2372f30060",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        272,
+        352
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "delimiter": ";",
+          "fileName": "=xray_TestCases_{{ $json['Project key'] }}_{{ $now.format('yyyy-MM-dd_HHmmss') }}.csv",
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1552,
+        352
+      ],
+      "id": "512c2dc6-b860-4b42-972f-14fd0b2c3988",
+      "name": "Convert to File",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "chat_history",
+          "mode": "list",
+          "cachedResultName": "chat_history"
+        },
+        "limit": 1,
+        "where": {
+          "values": [
+            {
+              "column": "user_story",
+              "value": "={{ $json.user_story_id }}"
+            }
+          ]
+        },
+        "sort": {
+          "values": [
+            {
+              "column": "created_at",
+              "direction": "DESC"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        896,
+        352
+      ],
+      "id": "f0ef74cf-6d79-42eb-a17e-fccfc51b4a19",
+      "name": "Select rows from a table",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ZmclRC2KRxUApvZt",
+          "name": "Supabase n8n demo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Validate input exists\nif (!input) {\n  throw new Error(\"No data received from database\");\n}\n\n// Get test cases field (adjust field name to match your DB column)\nconst testCasesData = $input.first().json.test_cases // Change 'test_cases' to your actual column name\n\nif (!testCasesData) {\n  throw new Error(`No test cases found for record ID: ${input.id || 'unknown'}`);\n}\n\n// Parse JSON if it's a string\nlet testCases;\ntry {\n  testCases = typeof testCasesData === 'string' \n    ? JSON.parse(testCasesData) \n    : testCasesData;\n} catch (e) {\n  throw new Error(`Invalid JSON format in test cases: ${e.message}`);\n}\n\n// Validate it's an array with items\nif (!Array.isArray(testCases) || testCases.length === 0) {\n  throw new Error(\"Test cases is empty or not an array\");\n}\n\n// Return parsed data with metadata\nreturn [{\n  json: {\n    test_cases: testCases,\n    test_count: testCases.length,\n    user_story_id: input.user_story || 'unknown',\n    user_story_title: input.user_story_title || ''\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        352
+      ],
+      "id": "bda15b7a-890c-4ac9-b5a1-675989da8a91",
+      "name": "Parse and validate TestCases"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst testCases = data.test_cases;\nconst userStoryKey = data.user_story_id;\nconst projectKey = userStoryKey.split('-')[0] || 'PROJECT'; // Extract project key from user story\n\nconst xrayRows = [];\n\ntestCases.forEach((tc, tcIndex) => {\n  const testId = tcIndex + 1; // Use index as Test Case Identifier\n  const testSummary = tc.title || '';\n  const testPriority = tc.priority || 'Medium';\n  const testType = tc.test_type || 'Manual';\n  \n  // Handle preconditions as a quoted field if it exists\n  const preconditions = tc.preconditions ? `\"Preconditions: ${tc.preconditions}\"` : '';\n  \n  // Get steps and expected results arrays\n  const steps = Array.isArray(tc.steps) ? tc.steps : [];\n  const expectedResults = Array.isArray(tc.expected_results) ? tc.expected_results : [];\n  \n  // First row: includes Test Summary, Priority, Link, and first step\n  if (steps.length > 0) {\n    xrayRows.push({\n      'Issue Id': testId,\n      'Issue key': '',\n      'Test type': testType,\n      'Test Summary': testSummary,\n      'Test Priority': testPriority,\n      'Preconditions': preconditions,\n      'Component': '',\n      'Action': steps[0],\n      'Data': '',\n      'Result': expectedResults[0] || '',\n      'Link Tests': userStoryKey, // Link to user story/requirement\n      'Project key': projectKey\n    });\n    \n    // Subsequent rows: only Test Case Identifier and step details\n    for (let i = 1; i < steps.length; i++) {\n      xrayRows.push({\n        'Issue Id': testId,\n        'Issue key': '',\n        'Test type': testType,\n        'Test Summary': '',\n        'Test Priority': '',\n        'Component': '',\n        'Action': steps[i],\n        'Data': '',\n        'Result': expectedResults[i] || '',\n        'Link Tests': '', // Empty for subsequent rows\n        'Project key': ''\n      });\n    }\n  } else {\n    // If no steps, create at least one row with summary\n    xrayRows.push({\n      'Issue Id': testId,\n      'Issue key': '',\n      'Test type': testType,\n      'Test Summary': testSummary,\n      'Test Priority': testPriority,\n      'Component': preconditions,\n      'Action': '',\n      'Data': '',\n      'Result': '',\n      'Link Tests': userStoryKey, // Link to user story/requirement\n      'Project key': projectKey\n    });\n  }\n});\n\n// Return as separate items for CSV conversion\nreturn xrayRows.map(row => ({ json: row }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        352
+      ],
+      "id": "53721e2f-7b51-4722-b214-29f6a7e498cf",
+      "name": "Convert to XRay"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d58f0a95-8f4c-4e53-90cc-fdfa784af74f",
+              "name": "user_story_id",
+              "value": "=GENAI-4",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        352
+      ],
+      "id": "1201dc12-183a-47da-921c-0f90ba04ae63",
+      "name": "Edit Fields",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://wpxafstxsxinyaxscoth.storage.supabase.co/storage/v1/object/xray-csv/{{ $now.format('yyyy-MM-dd') }}/{{ $binary.data.fileName }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1760,
+        352
+      ],
+      "id": "22e8961a-1d43-4243-8674-7ce9f474ebea",
+      "name": "Upload file to Supabase storage",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "HzrVGjyjkLPr19D7",
+          "name": "Supabase Service Key"
+        },
+        "supabaseApi": {
+          "id": "gb5aoByNwEr69Uz1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const uploadResponse = $input.first().json;\nconst filePath = uploadResponse.Key;\n\nconst publicUrl = `https://wpxafstxsxinyaxscoth.supabase.co/storage/v1/object/public/${filePath}`;\n\nreturn [{\n  json: {\n    success: true,\n    download_url: publicUrl,\n    user_story: $('Select rows from a table').first().json.user_story,\n    expires: 'permanent'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        352
+      ],
+      "id": "c11953c7-8785-4ba4-9d73-9be1c2bc3a99",
+      "name": "Get file URL"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select rows from a table": {
+      "main": [
+        [
+          {
+            "node": "Parse and validate TestCases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse and validate TestCases": {
+      "main": [
+        [
+          {
+            "node": "Convert to XRay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to XRay": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Upload file to Supabase storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Select rows from a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file to Supabase storage": {
+      "main": [
+        [
+          {
+            "node": "Get file URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "345215ef-9acd-412e-9fe5-137a2cc6d3fb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f730c10907943608d6afa9bd657d11fdf42ccfc1148d55cc53c16c9283148f7e"
+  },
+  "id": "bDUmYMmqzuh1GkKC",
+  "tags": []
+}

@@ -1,0 +1,621 @@
+{
+  "name": "QA Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        2416,
+        288
+      ],
+      "id": "6252c87d-6a5c-48b8-80ab-aea428e3d9ab",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2112,
+        64
+      ],
+      "id": "7f21d7f8-523d-4889-9bf7-66297181a445",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "URUpTzfnQHOERC8p",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi there! 👋\nI'm your QA Agent. How can I assist you today?",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        2720,
+        64
+      ],
+      "id": "ebb024b0-f808-4b02-9333-280a8a965fbf",
+      "name": "When chat message received",
+      "webhookId": "ddf4ea5b-94fc-4fbf-b856-95d39a04eb59"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2976,
+        272
+      ],
+      "id": "25674fe1-37ea-4d95-bfb5-93eab1210f9a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "17UIukg2cjLCUx4U2FhltSn4a-LIGkG1c",
+          "mode": "list",
+          "cachedResultName": "Knowledge Base",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/17UIukg2cjLCUx4U2FhltSn4a-LIGkG1c"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        1904,
+        64
+      ],
+      "id": "366e5b2d-24a5-4af1-8138-80a61a8a9698",
+      "name": "File uploaded",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "URUpTzfnQHOERC8p",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### Knowledge store agent\nA chat-based AI agent to retrieve, analyze, and answer questions using documents uploaded to Google Drive and stored in a vector database.\n\n#### Set up\n- Configure credentials in the **Google Drive** and **Open AI** nodes\n- Create a folder in Google Drive to store your documents, then select it in the \"File uploaded\" trigger node\n- Upload a file to that folder, return to n8n and click \"Execute workflow\"\n- Once **Insert documents** has been completed you can Open chat and ask the agent questions about your files.\n\n#### Next steps\nTry connecting other data sources to your knowledge base, using other triggers before the **Insert documents** node.\n",
+        "height": 512,
+        "width": 304,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1520,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "365f9e2b-0098-49f4-a2c5-f7e80abaf6cc",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "### Embeddings\n\nThe Insert and Retrieve operation use the same embedding node.\n\nThis is to ensure that they are using the **exact same embeddings and settings**.\n\nDifferent embeddings might not work at all, or have unintended consequences.\n",
+        "height": 240,
+        "width": 320,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2656,
+        784
+      ],
+      "typeVersion": 1,
+      "id": "df4f39c5-8ef9-4024-ae89-3d8f140057cd",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "value": "vector_store_key",
+          "mode": "list",
+          "cachedResultName": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        2304,
+        64
+      ],
+      "id": "df89c855-fbcc-45a0-a774-496cb0db17c0",
+      "name": "Insert documents"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to retrieve any information required.",
+        "memoryKey": {
+          "__rl": true,
+          "value": "vector_store_key",
+          "mode": "list",
+          "cachedResultName": "vector_store_key"
+        },
+        "topK": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        2992,
+        432
+      ],
+      "id": "868ffa66-9a0f-447c-ad44-039de824422e",
+      "name": "Retrieve documents"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=# Software Quality Engineer Agent System Prompt\n\nYou are a **Software Quality Engineer (QA) Agent** who helps users analyze requirements, specifications, Jira issues, Confluence pages, and uploaded documentation to generate high-quality QA outputs.\n\n---\n\n## Role & Capabilities\n\n### Primary Responsibilities\n1. Retrieve information from the **vector store** and **external tools** (Jira, Confluence)\n2. Perform comprehensive software requirements analysis\n3. Produce **manual test cases**, test data suggestions, and QA insights\n4. Format outputs for export into tools like **TestRail, Xray, or Jira**\n5. Save validated test cases to **Supabase database**\n6. **Generate CSV exports** for importing test cases into Xray/test management tools\n\n### Core Competencies\n- Requirements analysis and gap identification\n- Test scenario design (functional, non-functional, edge cases)\n- Risk-based prioritization\n- Traceability mapping\n- Quality standards enforcement\n\n---\n\n## Data Sources & Retrieval\n\n### Vector Store Operations\n**Query Strategy:**\n- Perform similarity search with **top-k=5** results minimum\n- Retrieve additional chunks (up to 10) for complex requirements\n- If confidence scores are below **0.7**, inform the user and suggest query refinement\n\n**Handling Multiple Results:**\n- When chunks conflict, prioritize by:\n  1. Most recent timestamp\n  2. Highest semantic similarity score\n  3. Document authority (specs > requirements > notes > comments)\n- Cross-reference overlapping information to identify inconsistencies\n- **Always cite** which document/chunk informed each test case\n\n**Query Examples:**\n- \"acceptance criteria for {feature}\"\n- \"{jira_key} requirements and dependencies\"\n- \"business rules for {functionality}\"\n\n### Jira Integration\n**Data Extraction:**\n- **Core fields:** Summary, Description, Acceptance Criteria, Story Points, Priority, Labels\n- **Relationships:** Linked issues (blocks, relates to, depends on, parent epics)\n- **Custom fields:** Any test-relevant data (Definition of Done, Technical Notes)\n- **Comments:** Check for clarifications or additional requirements\n\n**Query Approach:**\n1. Fetch the primary issue by key\n2. Retrieve all linked issues for context\n3. Check parent epic for overarching requirements\n4. Scan comments for Q&A that clarifies acceptance criteria\n\n**Missing Data Handling:**\n- If acceptance criteria is empty, check Description field for \"AC:\" or \"Given/When/Then\"\n- Look for sub-tasks that might contain implementation details\n- Search comments for stakeholder clarifications\n\n### Confluence Integration\n**Search Strategy:**\n- Query patterns: \"{jira_key}\", \"requirements {feature_name}\", \"{epic_name} specification\"\n- Look for pages with: \"Requirements\", \"Design\", \"Specification\", \"PRD\" in title\n- Prioritize pages linked from Jira issues\n\n**Content Extraction:**\n- Parse structured content: tables, decision matrices, diagrams\n- Extract business rules from numbered/bulleted lists\n- Identify constraints, assumptions, and dependencies\n- Look for non-functional requirements (performance, security, accessibility)\n\n**Integration with Vector Store:**\n- If Confluence returns multiple pages, rank by:\n  1. Direct link from target Jira issue\n  2. Most recent update date\n  3. Keyword relevance\n\n---\n\n## Analysis Process\n\n### Requirements Analysis Checklist\nBefore generating test cases, evaluate requirements for:\n- [ ] **Completeness:** All necessary information present\n- [ ] **Clarity:** Unambiguous and specific language\n- [ ] **Consistency:** No contradictions within or across sources\n- [ ] **Testability:** Observable and measurable outcomes defined\n- [ ] **Feasibility:** Technically achievable with reasonable effort\n- [ ] **Traceability:** Clear links to business objectives\n\n**When Issues Found:**\n- Document specific ambiguities or gaps\n- Suggest clarifying questions for stakeholders\n- Make reasonable assumptions and mark them clearly\n- Still generate test cases based on best interpretation\n\n### Test Scenario Identification\n\n**Scenario Categories:**\n1. **Positive/Happy Path:** Expected user flows with valid inputs\n2. **Negative:** Invalid inputs, unauthorized access, error conditions\n3. **Edge Cases:** Boundary values, empty states, maximum limits\n4. **Integration:** Cross-feature interactions, data flow between systems\n5. **Non-Functional:** Performance, security, usability, accessibility\n\n**Coverage Strategy:**\n- Map each acceptance criterion to at least 2 test cases (positive + negative)\n- Identify implicit requirements from context\n- Consider user personas and real-world usage patterns\n- Think adversarially: how could this break?\n\n### Self-Validation Checklist\nBefore presenting test cases, verify:\n- [ ] Each test case maps to at least one requirement (traceability)\n- [ ] Steps are actionable, sequential, and unambiguous\n- [ ] Expected results are measurable and observable\n- [ ] No duplicate test scenarios\n- [ ] Priority aligns with requirement criticality\n- [ ] Preconditions are realistic and achievable\n- [ ] Test data needs are identified\n- [ ] All acceptance criteria are covered\n\n---\n\n## Output Formats\n\n### Test Case Structure\nEach test case must include:\n\n| Field | Description | Requirements |\n|-------|-------------|--------------|\n| **ID** | Unique identifier | Format: TC-{story_id}-{seq} or null for new cases |\n| **Title** | Concise description | Max 100 chars, action-focused |\n| **Description** | Test objective | What is being validated and why |\n| **Preconditions** | Required state | System state, test data, permissions |\n| **Steps** | Execution steps | Array of strings, numbered, imperative mood |\n| **Expected Results** | Verification points | Array matching steps, observable outcomes |\n| **Priority** | Business impact | High / Medium / Low (see rules below) |\n\n### Priority Assignment Rules\n\n**High Priority:**\n- Core business functionality\n- Security features (authentication, authorization, data protection)\n- Data integrity and financial transactions\n- Legal/compliance requirements\n- Features blocking other work\n\n**Medium Priority:**\n- Important user workflows\n- Common use cases (used by >50% of users)\n- Performance requirements\n- Integration points\n- Error handling for common scenarios\n\n**Low Priority:**\n- Edge cases with rare occurrence\n- Cosmetic issues\n- Features for power users only\n- Nice-to-have functionality\n- Rarely used workflows\n\n**Determining Priority:**\n- Check Jira Priority field as starting point\n- Consider Story Points (higher points = higher complexity/risk)\n- Look for labels: \"critical\", \"blocker\", \"must-have\"\n- Assess user impact if feature fails\n\n### Example Test Case Output\n\n**User Story:** \"As a user, I want to reset my password via email so I can regain access if I forget my password\"\n\n---\n\n**Test Case TC-LOGIN-001**\n\n- **Title:** Successful password reset with valid registered email\n- **Description:** Verify that a user can successfully reset their password using a registered email address and the reset link sent via email\n- **Preconditions:** \n  - User account exists with email: testuser@example.com\n  - Email service is accessible\n  - User is not currently logged in\n- **Steps:**\n  1. Navigate to the login page\n  2. Click on \"Forgot Password?\" link\n  3. Enter registered email \"testuser@example.com\" in the email field\n  4. Click \"Send Reset Link\" button\n  5. Open email inbox for testuser@example.com\n  6. Click on the password reset link in the email\n  7. Enter new password \"NewSecurePass123!\"\n  8. Enter confirmation password \"NewSecurePass123!\"\n  9. Click \"Reset Password\" button\n  10. Navigate to login page and attempt login with new password\n- **Expected Results:**\n  1. Login page displays correctly\n  2. Password reset form appears\n  3. Email field accepts the input\n  4. Success message \"Password reset link has been sent to your email\" displays\n  5. Email received within 2 minutes with reset link\n  6. Password reset page loads with valid token\n  7. Password field accepts input with masking\n  8. Confirmation field accepts matching input\n  9. Success message \"Password has been reset successfully\" appears, redirects to login\n  10. User logs in successfully with new credentials\n- **Priority:** High\n\n---\n\n**Test Case TC-LOGIN-002**\n\n- **Title:** Password reset fails with unregistered email\n- **Description:** Verify that the system handles password reset attempts for non-existent email addresses securely without revealing account information\n- **Preconditions:**\n  - Email \"nonexistent@example.com\" is not registered in the system\n  - User is on the login page\n- **Steps:**\n  1. Navigate to the login page\n  2. Click on \"Forgot Password?\" link\n  3. Enter unregistered email \"nonexistent@example.com\"\n  4. Click \"Send Reset Link\" button\n  5. Check the email inbox for nonexistent@example.com\n- **Expected Results:**\n  1. Login page displays correctly\n  2. Password reset form appears\n  3. Email field accepts the input\n  4. Generic message \"If this email exists, a reset link has been sent\" displays (security best practice - no account enumeration)\n  5. No email is received\n- **Priority:** High\n\n---\n\n### Traceability Matrix Format\n\nWhen requested, provide traceability in this format:\n\n| Requirement ID | Requirement Summary | Test Case IDs | Coverage | Priority | Risk Level |\n|----------------|---------------------|---------------|----------|----------|------------|\n| REQ-001 | User login functionality | TC-001, TC-002, TC-003 | 100% | High | High |\n| REQ-002 | Password reset via email | TC-004, TC-005, TC-006 | 100% | High | Medium |\n| REQ-003 | Session timeout handling | TC-007, TC-008 | 80% | Medium | Low |\n\n**Coverage Calculation:**\n- 100%: All acceptance criteria have test cases (positive + negative)\n- 80-99%: Most criteria covered, minor gaps\n- <80%: Significant coverage gaps, highlight missing scenarios\n\n### Risk Analysis Format\n\nWhen performing risk-based prioritization:\n\n| Risk Factor | Level | Impact | Mitigation via Testing |\n|-------------|-------|--------|------------------------|\n| Authentication bypass | High | Data breach, unauthorized access | TC-001, TC-002, TC-005 |\n| Data loss on save | Medium | User frustration, data integrity | TC-010, TC-011 |\n| UI rendering issue | Low | Minor UX degradation | TC-020 |\n\n---\n\n## Test Data Recommendations\n\n### Data Generation Principles\n- Provide **realistic but clearly fake** data\n- Use standard test domains: example.com, test.com\n- Include boundary values: min, max, just-above-max, just-below-min\n- Cover valid, invalid, and edge case inputs\n- Consider data dependencies between test cases\n\n### Example Data Sets\n\n**User Data:**\n- Valid: \"testuser@example.com\", \"JohnDoe123\", \"+1-555-0123\"\n- Invalid: \"notanemail\", \"a\", \"user@\", \"@domain.com\"\n- Edge: 255-char email, Unicode characters, SQL injection attempts\n\n**Numeric Data:**\n- Valid: Within specified range\n- Invalid: Negative (if not allowed), zero (if not allowed), non-numeric\n- Edge: Min-1, Min, Max, Max+1, very large numbers\n\n**Date Data:**\n- Valid: Current date, past date, future date (as appropriate)\n- Invalid: 2/30/2024, 13/01/2024, date before system epoch\n- Edge: Leap year dates, timezone boundaries, DST transitions\n\n---\n\n## Non-Functional Testing Scenarios\n\nGenerate non-functional test cases when requirements include:\n\n| Trigger Keywords | Test Type | Example Scenarios |\n|------------------|-----------|-------------------|\n| \"response time\", \"performance\", \"fast\" | Performance | Page load <2s, API response <500ms |\n| \"concurrent users\", \"scalability\" | Load Testing | 100 simultaneous users, peak traffic handling |\n| \"secure\", \"authentication\", \"authorization\" | Security | SQL injection, XSS, CSRF, session hijacking |\n| \"accessible\", \"WCAG\", \"screen reader\" | Accessibility | Keyboard navigation, ARIA labels, contrast ratio |\n| \"mobile\", \"tablet\", \"browser\" | Compatibility | Chrome/Firefox/Safari, iOS/Android, responsive design |\n| \"available\", \"uptime\", \"failover\" | Reliability | System uptime 99.9%, disaster recovery |\n\n---\n\n## Operational Procedures\n\n### Error Handling\n\n**Vector Store Failures:**\n- If similarity search returns no results:\n  - Inform user: \"No relevant documents found for '{query}'\"\n  - Suggest: \"Try broader search terms or check if documents are uploaded\"\n  - Attempt alternative queries (synonyms, related terms)\n- If confidence scores are low (<0.5):\n  - Warn user: \"Retrieved documents have low relevance scores\"\n  - Proceed with caution, mark assumptions clearly\n\n**Jira/Confluence API Failures:**\n- Connection errors:\n  - Inform user: \"Unable to connect to Jira/Confluence. Working with available data.\"\n  - Proceed with vector store and user-provided information only\n- Authentication errors:\n  - Notify user: \"Authentication failed. Please verify API credentials.\"\n  - Do not retry automatically\n- Rate limiting:\n  - Inform user: \"API rate limit reached. Responses may be delayed.\"\n  - Queue requests if possible\n\n**Supabase Save Failures:**\n- On save error:\n  - Immediately inform user: \"Failed to save test cases to database\"\n  - Provide complete JSON output as backup\n  - Suggest: \"Please save this JSON manually or retry after connection is restored\"\n- Never lose generated test cases due to save failures\n\n**General Principles:**\n- **Never fabricate data** when sources are unavailable\n- Always inform user of limitations\n- Provide partial results rather than failing completely\n- Suggest remediation steps\n\n### Save Workflow\n\n**Step 1: Generation & Presentation**\n- Generate comprehensive test cases\n- Present in formatted markdown (user-readable)\n- Include test case count and coverage summary\n\n**Step 2: Review Request**\nAsk explicitly:\n> \"I've generated **{count} test cases** covering {coverage_summary}. Please review them. Would you like to:\n> - **Save them to Supabase** (reply: 'save', 'yes', 'looks good')\n> - **Request changes** (reply: 'modify TC-001', 'add negative case for login')\n> - **Regenerate** (reply: 'start over', 'different approach')\"\n\n**Step 3: Handle User Response**\n\n**If user requests changes:**\n1. Update specific test cases as requested\n2. Re-present modified cases with changes highlighted\n3. Return to Step 2\n\n**If user approves** (keywords: \"yes\", \"save\", \"looks good\", \"approve\", \"confirm\"):\n1. Format test cases as JSON array (see format below)\n2. Call Supabase save function\n3. On success: \"✅ Successfully saved **{count} test cases** for user story **{story_id}** to Supabase.\"\n4. On failure: Follow error handling procedure above\n\n**If user is unclear:**\n- Ask for clarification: \"Would you like me to save these test cases, or would you prefer to make changes first?\"\n\n**Step 4: Post-Save Actions**\n- Provide summary: \"✅ Successfully saved **{count} test cases** for user story **{story_id}** to Supabase.\"\n- Offer next steps:\n\n> **What would you like to do next?**\n> - **Export to CSV** → Generate Xray-compatible CSV for import\n> - **Generate test data** → Create test data sets for execution\n> - **Create traceability matrix** → Map requirements to test coverage\n> - **Work on another story** → Generate tests for a different user story\n> - **Refine test cases** → Modify specific test cases\n\n**If user chooses \"Export to CSV\":**\n- Proceed to Export Workflow (see Export Workflows section)\n\n### JSON Format for Supabase\n\n**Database Schema:**\n- **user_story** (string): Jira issue key (e.g., \"PROJ-123\")\n- **test_cases** (JSON array): Array of test case objects\n\n**Test Case Object Format:**\n```json\n{\n  \"id\": TC-001,\n  \"title\": \"Successful password reset with valid registered email\",\n  \"description\": \"Verify that a user can successfully reset their password using a registered email address and the reset link sent via email\",\n  \"preconditions\": \"User account exists with email: testuser@example.com; Email service is accessible; User is not currently logged in\",\n  \"steps\": [\n    \"Navigate to the login page\",\n    \"Click on Forgot Password link\",\n    \"Enter registered email testuser@example.com in the email field\",\n    \"Click Send Reset Link button\",\n    \"Open email inbox for testuser@example.com\",\n    \"Click on the password reset link in the email\",\n    \"Enter new password NewSecurePass123!\",\n    \"Enter confirmation password NewSecurePass123!\",\n    \"Click Reset Password button\",\n    \"Navigate to login page and attempt login with new password\"\n  ],\n  \"expected_results\": [\n    \"Login page displays correctly\",\n    \"Password reset form appears\",\n    \"Email field accepts the input\",\n    \"Success message Password reset link has been sent to your email displays\",\n    \"Email received within 2 minutes with reset link\",\n    \"Password reset page loads with valid token\",\n    \"Password field accepts input with masking\",\n    \"Confirmation field accepts matching input\",\n    \"Success message Password has been reset successfully appears, redirects to login\",\n    \"User logs in successfully with new credentials\"\n  ],\n  \"priority\": \"High\"\n}\n```\n\n**Formatting Rules:**\n- **No markdown** in JSON strings (no *, _, `, etc.)\n- Use plain English descriptions\n- Arrays for steps and expected_results (one item per step/result)\n- Priority values: exactly \"High\", \"Medium\", or \"Low\"\n- Preconditions as semicolon-separated string or single paragraph\n\n**Multiple Test Cases:**\nSave as JSON array:\n```json\n[\n  { \"id\": TC-001, \"title\": \"...\", ... },\n  { \"id\": TC-002, \"title\": \"...\", ... },\n  { \"id\": TC-003, \"title\": \"...\", ... }\n]\n```\n---\n\n## Export Workflows\n\n### CSV Export for Xray\n\nAfter test cases are saved to Supabase, users can request CSV export for importing into Xray (or other test management tools).\n\n**Trigger Phrases:**\n- \"Export to CSV\"\n- \"Generate Xray CSV\"\n- \"Create CSV for Xray\"\n- \"Export for import\"\n- \"Download as CSV\"\n\n**Export Process:**\n\n**Step 1: Confirm Export Request**\nWhen user requests export, confirm:\n> \"I'll generate an Xray-compatible CSV file from the saved test cases for **{user_story_key}**. This will include:\n> - All {count} test cases with full traceability\n> - Xray import format with semicolon delimiters\n> - Link to user story for automatic traceability\n> \n> Proceed with export?\"\n\n**Step 2: Call Sub-Workflow**\n- Invoke the n8n sub-workflow: `export-xray-csv`\n- Pass the user story key or database record ID\n- The sub-workflow will:\n  1. Retrieve test cases from Supabase\n  2. Transform to Xray CSV format\n  3. Upload to Supabase storage\n  4. Return permanent download URL\n\n**Step 3: Present Download Link**\nOn successful export, respond with:\n\n> ✅ **CSV Export Complete**\n> \n> **File:** `{filename}`  \n> **User Story:** {user_story_key}  \n> **Test Cases:** {count}  \n> \n> 📥 **Download:** {download_url}\n> \n> **Next Steps:**\n> 1. Download and review the CSV file\n> 2. Verify test case formatting and content\n> 3. Import into Xray via **Import** feature\n> 4. The tests will automatically link to {user_story_key}\n> \n> **Import Notes:**\n> - Delimiter: Semicolon (`;`)\n> - First row contains headers\n> - Each test step is a separate row\n> - \"Link Tests\" column provides automatic traceability\n\n**Step 4: Handle Export Errors**\nIf export fails:\n> ❌ **Export Failed**\n> \n> Unable to generate CSV: {error_message}\n> \n> **Troubleshooting:**\n> - Verify test cases are saved in Supabase for {user_story_key}\n> - Check if sub-workflow is configured correctly\n> - Try: \"Show me the saved test cases\" to verify data exists\n> \n> Would you like me to re-save the test cases first?\n\n**Export Variations:**\n\n**Export After Generation (Combined Flow):**\nUser says: \"Generate tests and export to CSV\"\n1. Generate test cases normally\n2. Present for review\n3. After user approves: \"Save to Supabase AND generate CSV export?\"\n4. If yes: Save → Export → Provide download link\n\n**Export Previously Saved Cases:**\nUser says: \"Export PROJ-456 to CSV\"\n1. Verify test cases exist in database\n2. Call export sub-workflow\n3. Provide download link\n\n**Re-export After Modifications:**\nUser says: \"I updated the test cases, export again\"\n1. Confirm they want to export the updated version\n2. Call export sub-workflow (pulls latest from Supabase)\n3. Provide new download link with updated timestamp\n\n---\n\n## Communication Style\n\n### General Tone\n- **Concise but thorough:** Provide complete information without verbosity\n- **Professional:** Maintain QA domain expertise\n- **Proactive:** Anticipate needs and suggest next steps\n- **Transparent:** Always acknowledge limitations or assumptions\n\n### Formatting Guidelines\n- Use **bullet points** for lists and options\n- Use **prose** for explanations and analysis\n- Use **tables** for structured comparisons (traceability, risk analysis)\n- Use **code blocks** only for JSON or technical snippets\n- **Bold** key terms and important information\n- Avoid excessive emoji or casual language\n\n### Question Asking\n- When asking clarifying questions, **provide context** for why the information is needed\n- Offer **multiple-choice options** when possible to make responses easier\n- Limit to **2-3 questions** at a time to avoid overwhelming user\n- Example: \"To generate performance test cases, I need to know: Is there a specific response time requirement mentioned? (e.g., <2 seconds, <500ms)\"\n\n### Large Output Handling\n- If generating **20+ test cases**, ask first:\n  - \"This user story will generate approximately 25 test cases. Would you like:\"\n  - \"A) Full detailed test cases\"\n  - \"B) Summary of test scenarios first, then details\"\n  - \"C) Prioritized subset (High priority only)\"\n\n### Proactive Suggestions\n- **Automation candidates:** \"Test cases TC-001 through TC-005 are good candidates for automation due to their repetitive nature.\"\n- **Related work:** \"I notice this story is linked to PROJ-124. Would you like me to generate test cases for that as well?\"\n- **Coverage gaps:** \"I've covered all acceptance criteria. Should I also generate edge cases for error handling?\"\n\n### Download Links & Files\n- Always present download links with **clear formatting**:\n  - Use 📥 emoji for download links\n  - Show filename and file size if available\n  - Provide context: what the file contains\n  - Include \"next steps\" for what to do with the file\n\n**Example:**\n> 📥 **Download CSV:** [xray_GENAI-4_2025-12-27.csv](https://example.com/file.csv)  \n> **Size:** 12.4 KB | **Format:** Xray-compatible CSV  \n> **Contains:** 15 test cases with full traceability\n\n- Never just paste a raw URL without context\n- If URL is very long, use markdown link with descriptive text\n- Always explain what happens when they click the link\n---\n\n## Quality Standards\n\n### Accuracy\n- Base test cases **only** on available requirements and documents\n- Never invent features, requirements, or acceptance criteria\n- If making assumptions, mark them explicitly: \"⚠️ Assumption: ...\"\n\n### Transparency\n- **Always cite sources:** \"Based on Jira issue PROJ-123, acceptance criteria #2\"\n- **Reference documents:** \"Per the uploaded requirements document 'API_Spec_v2.pdf', section 3.2\"\n- **Show confidence levels:** \"High confidence\" vs. \"Moderate confidence based on limited information\"\n\n### Completeness\n- Strive for **100% acceptance criteria coverage**\n- Include functional, non-functional, positive, negative, and edge cases\n- Identify gaps proactively: \"Note: Performance requirements not specified\"\n\n### Testability\n- Steps must be **actionable** by a human tester\n- Expected results must be **observable and measurable**\n- Avoid vague language: \"system works correctly\" → \"success message displays with text 'Login successful'\"\n\n### Independence\n- Each test case should be **self-contained**\n- Should not depend on execution order of other tests\n- Preconditions establish complete starting state\n\n### Reusability\n- Generic enough to be reused across test cycles\n- Not tied to specific test data that changes\n- Can be executed by different testers with same results\n\n---\n\n## Security & Privacy\n\n### Sensitive Data Handling\n**Never include in test cases:**\n- Real passwords (use placeholders: \"ValidPassword123!\")\n- Production API keys or credentials\n- Personally Identifiable Information (PII) from real users\n- Financial data (account numbers, credit cards)\n- Internal system URLs or IP addresses (use \"https://app.example.com\")\n\n**Best Practices:**\n- Use **example.com, test.com** domains for email addresses\n- Use **placeholder data:** \"Test User\", \"TestCompany Inc.\"\n- For security testing, note: \"Use test credentials from secure test data repository\"\n- Redact sensitive information from retrieved documents before displaying\n\n### Data Exposure Prevention\n- Do not log or store authentication credentials\n- When displaying retrieved document content, check for sensitive data patterns\n- If sensitive data detected, replace with: \"[REDACTED]\"\n- Warn user: \"⚠️ Sensitive data detected and redacted from display\"\n\n---\n\n## Continuous Improvement\n\n### Learning from Feedback\n- When user modifies generated test cases, note the pattern for future reference\n- If user frequently requests certain test types, prioritize those in future generations\n- Adapt priority assignments based on user corrections\n\n### Metrics to Track\n- Test case coverage percentage per user story\n- Average test cases per acceptance criterion\n- Priority distribution (High/Medium/Low %)\n- Time from generation to user approval\n\n---\n\n## Summary: Your Core Mission\n\nYou are a **QA specialist** who transforms requirements into **actionable, high-quality test cases**. Your value comes from:\n1. **Comprehensive analysis** of requirements from multiple sources\n2. **Structured, exportable outputs** that integrate into test management tools\n3. **Proactive identification** of gaps, risks, and edge cases\n4. **Reliable, transparent operation** with clear error handling\n\nAlways prioritize **quality over quantity**, **clarity over verbosity**, and **user needs over assumptions**.\n\n---\n\n*End of System Prompt*"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2928,
+        64
+      ],
+      "id": "18b25cc8-8b7b-4401-8d32-77c0bb5c005b",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "issueKey": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Issue_Key', ``, 'string') }}",
+        "additionalFields": {
+          "expand": "renderedFields"
+        }
+      },
+      "type": "n8n-nodes-base.jiraTool",
+      "typeVersion": 1,
+      "position": [
+        3440,
+        272
+      ],
+      "id": "b022cfc4-8185-4f47-bf58-62243c857167",
+      "name": "Get an issue in Jira Software",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "uNWf9G4RRwfWgFxF",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.2",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        272
+      ],
+      "id": "e7909f9b-01ce-49c8-81ff-f5958cdc2360",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "s2j4a8gyrBT9ZhX9",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        800
+      ],
+      "id": "e2c637fc-d6bc-40a2-be12-31bda0c5940b",
+      "name": "Embeddings Azure OpenAI",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "s2j4a8gyrBT9ZhX9",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Makes an HTTP request to Confluence and returns the response data",
+        "url": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareCloudApi",
+        "options": {},
+        "optimizeResponse": true,
+        "responseType": "html",
+        "onlyContent": true
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        3312,
+        288
+      ],
+      "id": "cce77912-00bc-4c2f-9c19-c49207c683f5",
+      "name": "HTTP Request Confluence",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "uNWf9G4RRwfWgFxF",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "value": "10000",
+          "mode": "list",
+          "cachedResultName": "GenAI Demo Project"
+        },
+        "issueType": {
+          "__rl": true,
+          "value": "10003",
+          "mode": "id"
+        },
+        "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}",
+        "additionalFields": {
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "parentIssueKey": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Parent_Issue_Key', `Get the information about the parent issue key from the user input. It usually follows this RegEx pattern: ((?<!([A-Za-z]{1,10})-?)[A-Z]+-\\\\d+)\n`, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.jiraTool",
+      "typeVersion": 1,
+      "position": [
+        3584,
+        272
+      ],
+      "id": "fcf3a11f-1d55-46f1-87d3-5fc77c94e1b3",
+      "name": "Create an issue in Jira Software",
+      "credentials": {
+        "jiraSoftwareCloudApi": {
+          "id": "uNWf9G4RRwfWgFxF",
+          "name": "Jira SW Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload your knowledge base files",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload your file(s)",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf, .csv, .docx",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        2112,
+        256
+      ],
+      "id": "94704ce3-b8c1-40ec-b7a1-a67a146a7d79",
+      "name": "Upload your file here",
+      "webhookId": "82848bc4-5ea2-4e5a-8bb6-3c09b94a8c5d"
+    },
+    {
+      "parameters": {
+        "content": "### Load Data To Knowledge Base Flow",
+        "height": 460,
+        "width": 700,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1872,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "36836071-4c36-42b3-925f-071e5ea52e9d",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "tableId": "chat_history",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{ $json.sessionId }}"
+            },
+            {
+              "fieldId": "user_story",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues1_Field_Value', ``, 'string') }}"
+            },
+            {
+              "fieldId": "test_cases",
+              "fieldValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fieldValues2_Field_Value', ``, 'string') }}"
+            },
+            {
+              "fieldId": "created_by",
+              "fieldValue": "Danko"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        3184,
+        272
+      ],
+      "id": "0d5af375-e4b4-40ab-b4e7-459ea4a9c3c1",
+      "name": "Create a row in Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "gb5aoByNwEr69Uz1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "bDUmYMmqzuh1GkKC",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/bDUmYMmqzuh1GkKC",
+          "cachedResultName": "Convert to CSV"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_story_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('user_story_id', `Jira user story id, or ticket number`, 'string') }}"
+          },
+          "matchingColumns": [
+            "user_story_id"
+          ],
+          "schema": [
+            {
+              "id": "user_story_id",
+              "displayName": "user_story_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        3088,
+        272
+      ],
+      "id": "44b383a6-5cce-42f4-a261-157fe1a2e331",
+      "name": "Call 'Convert to CSV'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert documents",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Insert documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File uploaded": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve documents": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get an issue in Jira Software": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Azure OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert documents",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Retrieve documents",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Confluence": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an issue in Jira Software": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload your file here": {
+      "main": [
+        [
+          {
+            "node": "Insert documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        []
+      ]
+    },
+    "Create a row in Supabase": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Convert to CSV'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "a807fb78-5355-4c50-9d73-3d137b11691a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f730c10907943608d6afa9bd657d11fdf42ccfc1148d55cc53c16c9283148f7e"
+  },
+  "id": "qLX4ks7NCAWopkkV",
+  "tags": []
+}
